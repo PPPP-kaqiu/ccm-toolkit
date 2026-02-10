@@ -103,16 +103,16 @@ ccc step
 
 > **提示：** 如果想使用其他 StepFun 模型（如 `step-2-16k`），请参考「高级配置」章节
 
-### 4. 启动 Agent Teams
+### 4. 使用 Agent Teams
 
-在项目目录中运行 Claude Code：
+`ccc step` 命令会**直接启动 Claude Code**，无需再运行 `claude` 命令。
 
 ```bash
 cd your-project
-claude
+ccc step
 ```
 
-然后在 Claude Code 中使用 Agent Teams 功能，例如：
+启动后，在 Claude Code 中使用 Agent Teams 功能，例如：
 
 ```
 我想设计一个飞机射击游戏，创建一个 Agent Team 来探索这个项目。
