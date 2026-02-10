@@ -68,7 +68,7 @@ fi
 # Helper: is known model keyword
 is_known_model() {
     case "$1" in
-        deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open)
+        deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|kimi-cn|qwen|minimax|mm|seed|doubao|step|claude|sonnet|s|open|patch-stepfun)
             return 0 ;;
         *)
             return 1 ;;
@@ -111,6 +111,9 @@ else
             eval "$("$CCM" "$model" "$seed_variant")"
         elif [[ -n "$region_arg" ]]; then
             eval "$("$CCM" "$model" "$region_arg")"
+        elif [[ "$model" == "patch-stepfun" ]]; then
+            "$CCM" "$model"
+            exit 0
         else
             eval "$("$CCM" "$model")"
         fi

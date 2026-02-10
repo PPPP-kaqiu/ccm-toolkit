@@ -164,6 +164,9 @@ ARK_API_KEY=your-ark-api-key
 # Qwen（阿里云 DashScope）
 QWEN_API_KEY=your-qwen-api-key
 
+# StepFun (阶跃星辰)
+STEP_API_KEY=your-step-api-key
+
 # Claude (如果使用API key而非Pro订阅)
 CLAUDE_API_KEY=your-claude-api-key
 
@@ -181,6 +184,7 @@ OPUS_MODEL=claude-opus-4-5-20251101
 HAIKU_MODEL=claude-haiku-4-5-20251001
 MINIMAX_MODEL=MiniMax-M2.1
 SEED_MODEL=ark-code-latest
+STEP_MODEL=step-3.5-flash
 
 EOF
         echo -e "${YELLOW}⚠️  $(t 'config_created'): $CONFIG_FILE${NC}" >&2
@@ -403,7 +407,7 @@ project_write_glm_settings() {
     local settings_dir
     settings_dir="$(dirname "$settings_path")"
 
-    if ! is_effectively_set "$GLM_API_KEY"; then
+    if ! is_effectively_set "${GLM_API_KEY:-}"; then
         echo -e "${RED}❌ Please configure GLM_API_KEY before writing project settings${NC}" >&2
         return 1
     fi
@@ -1034,7 +1038,7 @@ clean_env() {
 switch_to_deepseek() {
     echo -e "${YELLOW}🔄 $(t 'switching_to') Deepseek $(t 'model')...${NC}"
     clean_env
-    if is_effectively_set "$DEEPSEEK_API_KEY"; then
+    if is_effectively_set "${DEEPSEEK_API_KEY:-}"; then
         # 官方 Deepseek 的 Anthropic 兼容端点
         export ANTHROPIC_BASE_URL="https://api.deepseek.com/anthropic"
         export ANTHROPIC_AUTH_TOKEN="$DEEPSEEK_API_KEY"
@@ -1068,7 +1072,7 @@ switch_to_claude() {
 
     clean_env
     export ANTHROPIC_BASE_URL="https://api.anthropic.com/"
-    if is_effectively_set "$CLAUDE_API_KEY"; then
+    if is_effectively_set "${CLAUDE_API_KEY:-}"; then
         export ANTHROPIC_AUTH_TOKEN="$CLAUDE_API_KEY"
     fi
     export ANTHROPIC_MODEL="${CLAUDE_MODEL:-claude-sonnet-4-5-20250929}"
@@ -1095,7 +1099,7 @@ switch_to_glm() {
     fi
     echo -e "${YELLOW}🔄 切换到 GLM（${region}）...${NC}"
     clean_env
-    if ! is_effectively_set "$GLM_API_KEY"; then
+    if ! is_effectively_set "${GLM_API_KEY:-}"; then
         echo -e "${RED}❌ Please configure GLM_API_KEY${NC}"
         return 1
     fi
@@ -1125,7 +1129,7 @@ switch_to_glm() {
 switch_to_kimi() {
     echo -e "${YELLOW}🔄 $(t 'switching_to') KIMI $(t 'model')...${NC}"
     clean_env
-    if ! is_effectively_set "$KIMI_API_KEY"; then
+    if ! is_effectively_set "${KIMI_API_KEY:-}"; then
         echo -e "${RED}❌ Please configure KIMI_API_KEY${NC}"
         return 1
     fi
@@ -1174,7 +1178,7 @@ switch_to_minimax() {
     fi
     echo -e "${YELLOW}🔄 $(t 'switching_to') MiniMax (${region}) $(t 'model')...${NC}"
     clean_env
-    if ! is_effectively_set "$MINIMAX_API_KEY"; then
+    if ! is_effectively_set "${MINIMAX_API_KEY:-}"; then
         echo -e "${RED}❌ Please configure MINIMAX_API_KEY${NC}"
         return 1
     fi
@@ -1211,7 +1215,7 @@ switch_to_qwen() {
     fi
     echo -e "${YELLOW}🔄 $(t 'switching_to') Qwen (${region}) $(t 'model')...${NC}"
     clean_env
-    if ! is_effectively_set "$QWEN_API_KEY"; then
+    if ! is_effectively_set "${QWEN_API_KEY:-}"; then
         echo -e "${RED}❌ Please configure QWEN_API_KEY${NC}"
         return 1
     fi
@@ -1242,7 +1246,7 @@ switch_to_seed() {
     local variant="${1:-}"
     echo -e "${YELLOW}🔄 $(t 'switching_to') 豆包 Seed-Code $(t 'model')...${NC}"
     clean_env
-    if ! is_effectively_set "$ARK_API_KEY"; then
+    if ! is_effectively_set "${ARK_API_KEY:-}"; then
         echo -e "${RED}❌ Please configure ARK_API_KEY${NC}"
         return 1
     fi
@@ -1298,6 +1302,8 @@ show_help() {
     echo "  seed [doubao|glm|deepseek|kimi] - env 豆包 Seed-Code"
     echo "  claude, sonnet, s       - env claude (official)"
     echo "  open <provider>         - env OpenRouter (run 'ccm open' for help)"
+    echo "  teams [on|off]          - Toggle experimental Agent Teams"
+    echo "  patch-stepfun           - Apply invasive patch to Claude Code for StepFun compatibility"
     echo ""
     echo -e "${YELLOW}Claude Pro Account Management:${NC}"
     echo "  save-account <name>     - Save current Claude Pro account"
@@ -1426,7 +1432,7 @@ emit_openrouter_exports() {
     # 加载配置以便进行存在性判断（环境变量优先，不打印密钥）
     load_config || return 1
 
-    if ! is_effectively_set "$OPENROUTER_API_KEY"; then
+    if ! is_effectively_set "${OPENROUTER_API_KEY:-}"; then
         echo -e "${RED}❌ Please configure OPENROUTER_API_KEY${NC}" >&2
         return 1
     fi
@@ -1495,13 +1501,118 @@ emit_openrouter_exports() {
     echo "$prelude"
     echo "export ANTHROPIC_BASE_URL='https://openrouter.ai/api'"
     echo "export ANTHROPIC_API_URL='https://openrouter.ai/api'"
-    echo "if [ -z \"\${OPENROUTER_API_KEY}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-    echo "export ANTHROPIC_AUTH_TOKEN=\"\${OPENROUTER_API_KEY}\""
+    echo "if [ -z \"\${OPENROUTER_API_KEY:-}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
+    echo "export ANTHROPIC_AUTH_TOKEN=\"\${OPENROUTER_API_KEY:-}\""
     echo "export ANTHROPIC_API_KEY=''"
     echo "export ANTHROPIC_MODEL='${model}'"
     echo "export ANTHROPIC_SMALL_FAST_MODEL='${small}'"
     emit_default_models "$default_sonnet" "$default_opus" "$default_haiku"
     emit_subagent_model "$model"
+}
+
+inject_stepfun_compatibility() {
+    local settings_path=""
+    # 优先检测当前项目目录下的 .claude/settings.local.json
+    if [[ -d ".claude" ]]; then
+        settings_path=".claude/settings.local.json"
+    elif [[ -d "$HOME/.claude" ]]; then
+        settings_path="$HOME/.claude/settings.local.json"
+    fi
+
+    # 如果无法确定路径，至少尝试全局路径
+    if [[ -z "$settings_path" ]]; then
+        settings_path="$HOME/.claude/settings.local.json"
+    fi
+
+    local prompt_file="$SCRIPT_DIR/resources/stepfun_compatibility_prompt.txt"
+    if [[ ! -f "$prompt_file" ]]; then
+        # 尝试备选路径（如果是安装后的版本）
+        if [[ -f "/usr/local/share/claude-code-switch/resources/stepfun_compatibility_prompt.txt" ]]; then
+            prompt_file="/usr/local/share/claude-code-switch/resources/stepfun_compatibility_prompt.txt"
+        fi
+    fi
+    
+    [[ ! -f "$prompt_file" ]] && return 0
+
+    local prompt_content
+    prompt_content=$(cat "$prompt_file")
+
+    if [[ -f "$settings_path" ]]; then
+        # 使用 jq 安全更新，如果 content 已存在则不重复添加
+        if command -v jq >/dev/null 2>&1; then
+            local current_append
+            current_append=$(jq -r '.systemPrompt.append // ""' "$settings_path")
+            if [[ "$current_append" != *"[StepFun Agent Teams Compatibility Mode]"* ]]; then
+                local new_append
+                if [[ -n "$current_append" ]]; then
+                    new_append="${current_append}\n\n${prompt_content}"
+                else
+                    new_append="$prompt_content"
+                fi
+                jq --arg append "$new_append" '.systemPrompt = {type: "preset", preset: "claude_code", append: $append}' "$settings_path" > "${settings_path}.tmp" && mv "${settings_path}.tmp" "$settings_path"
+                echo -e "${GREEN}✅ Injected StepFun coordination compatibility layer into $settings_path${NC}" >&2
+            fi
+        fi
+    else
+        # 文件不存在，创建基础结构
+        mkdir -p "$(dirname "$settings_path")"
+        if command -v jq >/dev/null 2>&1; then
+            jq -n --arg append "$prompt_content" '{systemPrompt: {type: "preset", preset: "claude_code", append: $append}}' > "$settings_path"
+        else
+            # 后备方案：简单的 printf
+            printf '{"systemPrompt": {"type": "preset", "preset": "claude_code", "append": "%s"}}\n' "$(echo "$prompt_content" | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')" > "$settings_path"
+        fi
+        echo -e "${GREEN}✅ Created $settings_path with StepFun coordination compatibility layer${NC}" >&2
+    fi
+}
+
+apply_stepfun_patch() {
+    local patch_script="$SCRIPT_DIR/scripts/patch_claude_cli.js"
+    if [[ ! -f "$patch_script" ]]; then
+        echo -e "${RED}❌ Patch script not found: $patch_script${NC}" >&2
+        return 1
+    fi
+
+    # Detect cli.js path
+    local cli_path=""
+    if [[ "$OS_TYPE" == "macos" ]]; then
+        cli_path="/opt/homebrew/lib/node_modules/@anthropic-ai/claude-code/cli.js"
+    else
+        cli_path="/usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js"
+    fi
+
+    if [[ ! -f "$cli_path" ]]; then
+        # Fallback to which
+        local which_claude
+        which_claude=$(which claude 2>/dev/null)
+        if [[ -n "$which_claude" ]]; then
+            # If it's a symlink, follow it
+            local real_claude
+            real_claude=$(readlink -f "$which_claude" 2>/dev/null || readlink "$which_claude" 2>/dev/null || echo "$which_claude")
+            cli_path=$(dirname "$real_claude")/cli.js
+            if [[ ! -f "$cli_path" ]]; then
+                # Try parent dir lib/node_modules
+                cli_path=$(dirname "$(dirname "$real_claude")")/lib/node_modules/@anthropic-ai/claude-code/cli.js
+            fi
+        fi
+    fi
+
+    if [[ ! -f "$cli_path" ]]; then
+        echo -e "${RED}❌ Could not locate Claude Code cli.js automatically.${NC}" >&2
+        echo -e "${YELLOW}Please provide the path manually: ccm patch-stepfun /path/to/cli.js${NC}" >&2
+        return 1
+    fi
+
+    local target_cli="${1:-$cli_path}"
+    echo -e "${BLUE}🛡️ Applying StepFun coordination patch to: $target_cli${NC}" >&2
+    
+    # Needs sudo for global node_modules usually
+    if [[ -w "$target_cli" ]]; then
+        node "$patch_script" "$target_cli"
+    else
+        echo -e "${YELLOW}🔑 Sudo required to modifiy global node_modules...${NC}" >&2
+        sudo node "$patch_script" "$target_cli"
+    fi
 }
 
 emit_env_exports() {
@@ -1518,11 +1629,11 @@ emit_env_exports() {
             emit_openrouter_exports "$arg"
             ;;
         "deepseek"|"ds")
-            if is_effectively_set "$DEEPSEEK_API_KEY"; then
+            if is_effectively_set "${DEEPSEEK_API_KEY:-}"; then
                 echo "$prelude"
                 echo "export ANTHROPIC_BASE_URL='https://api.deepseek.com/anthropic'"
-                echo "if [ -z \"\${DEEPSEEK_API_KEY}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-                echo "export ANTHROPIC_AUTH_TOKEN=\"\${DEEPSEEK_API_KEY}\""
+                echo "if [ -z \"\${DEEPSEEK_API_KEY:-}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
+                echo "export ANTHROPIC_AUTH_TOKEN=\"\${DEEPSEEK_API_KEY:-}\""
                 local ds_model="${DEEPSEEK_MODEL:-deepseek-chat}"
                 echo "export ANTHROPIC_MODEL='${ds_model}'"
                 emit_default_models "deepseek/deepseek-v3.2" "deepseek/deepseek-v3.2" "deepseek/deepseek-v3.2"
@@ -1533,7 +1644,7 @@ emit_env_exports() {
             fi
             ;;
         "kimi"|"kimi2"|"kimi-cn")
-            if ! is_effectively_set "$KIMI_API_KEY"; then
+            if ! is_effectively_set "${KIMI_API_KEY:-}"; then
                 echo -e "${RED}❌ Please configure KIMI_API_KEY${NC}" >&2
                 return 1
             fi
@@ -1558,14 +1669,14 @@ emit_env_exports() {
             fi
             echo "$prelude"
             echo "export ANTHROPIC_BASE_URL='${kimi_base_url}'"
-            echo "if [ -z \"\${KIMI_API_KEY}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-            echo "export ANTHROPIC_AUTH_TOKEN=\"\${KIMI_API_KEY}\""
+            echo "if [ -z \"\${KIMI_API_KEY:-}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
+            echo "export ANTHROPIC_AUTH_TOKEN=\"\${KIMI_API_KEY:-}\""
             echo "export ANTHROPIC_MODEL='${kimi_model}'"
             emit_default_models "$kimi_model" "$kimi_model" "$kimi_model"
             emit_subagent_model "$kimi_model"
             ;;
         "qwen")
-            if ! is_effectively_set "$QWEN_API_KEY"; then
+            if ! is_effectively_set "${QWEN_API_KEY:-}"; then
                 echo -e "${RED}❌ Please configure QWEN_API_KEY${NC}" >&2
                 return 1
             fi
@@ -1587,14 +1698,14 @@ emit_env_exports() {
             local qwen_model="${QWEN_MODEL:-qwen3-max-2026-01-23}"
             echo "$prelude"
             echo "export ANTHROPIC_BASE_URL='${qwen_base_url}'"
-            echo "if [ -z \"\${QWEN_API_KEY}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-            echo "export ANTHROPIC_AUTH_TOKEN=\"\${QWEN_API_KEY}\""
+            echo "if [ -z \"\${QWEN_API_KEY:-}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
+            echo "export ANTHROPIC_AUTH_TOKEN=\"\${QWEN_API_KEY:-}\""
             echo "export ANTHROPIC_MODEL='${qwen_model}'"
             emit_default_models "$qwen_model" "$qwen_model" "qwen3-coder-plus"
             emit_subagent_model "$qwen_model"
             ;;
         "glm"|"glm4"|"glm4.6"|"glm4.7")
-            if ! is_effectively_set "$GLM_API_KEY"; then
+            if ! is_effectively_set "${GLM_API_KEY:-}"; then
                 echo -e "${RED}❌ Please configure GLM_API_KEY${NC}" >&2
                 return 1
             fi
@@ -1616,14 +1727,14 @@ emit_env_exports() {
             local glm_model="${GLM_MODEL:-glm-4.7}"
             echo "$prelude"
             echo "export ANTHROPIC_BASE_URL='${glm_base_url}'"
-            echo "if [ -z \"\${GLM_API_KEY}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-            echo "export ANTHROPIC_AUTH_TOKEN=\"\${GLM_API_KEY}\""
+            echo "if [ -z \"\${GLM_API_KEY:-}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
+            echo "export ANTHROPIC_AUTH_TOKEN=\"\${GLM_API_KEY:-}\""
             echo "export ANTHROPIC_MODEL='${glm_model}'"
             emit_default_models "$glm_model" "$glm_model" "$glm_model"
             emit_subagent_model "$glm_model"
             ;;
         "minimax"|"mm")
-            if ! is_effectively_set "$MINIMAX_API_KEY"; then
+            if ! is_effectively_set "${MINIMAX_API_KEY:-}"; then
                 echo -e "${RED}❌ Please configure MINIMAX_API_KEY${NC}" >&2
                 return 1
             fi
@@ -1645,14 +1756,39 @@ emit_env_exports() {
             local mm_model="${MINIMAX_MODEL:-MiniMax-M2.1}"
             echo "$prelude"
             echo "export ANTHROPIC_BASE_URL='${mm_base_url}'"
-            echo "if [ -z \"\${MINIMAX_API_KEY}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-            echo "export ANTHROPIC_AUTH_TOKEN=\"\${MINIMAX_API_KEY}\""
+            echo "if [ -z \"\${MINIMAX_API_KEY:-}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
+            echo "export ANTHROPIC_AUTH_TOKEN=\"\${MINIMAX_API_KEY:-}\""
             echo "export ANTHROPIC_MODEL='${mm_model}'"
             emit_default_models "$mm_model" "$mm_model" "$mm_model"
             emit_subagent_model "$mm_model"
             ;;
+        "step")
+            if is_effectively_set "${STEP_API_KEY:-}"; then
+                echo "$prelude"
+                echo "export ANTHROPIC_BASE_URL='https://api.stepfun.com/'"
+                echo "if [ -z \"\${STEP_API_KEY:-}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
+                echo "export ANTHROPIC_AUTH_TOKEN=\"\${STEP_API_KEY:-}\""
+                echo "unset ANTHROPIC_API_KEY"
+                local step_model="${STEP_MODEL:-step-3.5-flash}"
+                echo "export ANTHROPIC_MODEL='${step_model}'"
+                echo "export ANTHROPIC_DEFAULT_MODEL='${step_model}'"
+                emit_default_models "$step_model" "$step_model" "$step_model"
+                emit_subagent_model "$step_model"
+                
+                # StepFun Coordination Fix
+                inject_stepfun_compatibility
+                
+                # Agent Teams Optimization Tip
+                if [[ -n "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" ]]; then
+                    echo -e "${YELLOW}💡 Tip: Agent Teams is ON. StepFun coordination patch applied via settings.local.json.${NC}" >&2
+                fi
+            else
+                echo -e "${RED}❌ Please configure STEP_API_KEY${NC}" >&2
+                return 1
+            fi
+            ;;
         "seed"|"doubao")
-            if ! is_effectively_set "$ARK_API_KEY"; then
+            if ! is_effectively_set "${ARK_API_KEY:-}"; then
                 echo -e "${RED}❌ Please configure ARK_API_KEY${NC}" >&2
                 return 1
             fi
@@ -1682,8 +1818,8 @@ emit_env_exports() {
             esac
             echo "$prelude"
             echo "export ANTHROPIC_BASE_URL='https://ark.cn-beijing.volces.com/api/coding'"
-            echo "if [ -z \"\${ARK_API_KEY}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
-            echo "export ANTHROPIC_AUTH_TOKEN=\"\${ARK_API_KEY}\""
+            echo "if [ -z \"\${ARK_API_KEY:-}\" ] && [ -f \"\$HOME/.ccm_config\" ]; then . \"\$HOME/.ccm_config\" >/dev/null 2>&1; fi"
+            echo "export ANTHROPIC_AUTH_TOKEN=\"\${ARK_API_KEY:-}\""
             echo "export ANTHROPIC_MODEL='${seed_model}'"
             emit_default_models "$seed_model" "$seed_model" "$seed_model"
             emit_subagent_model "$seed_model"
@@ -1699,8 +1835,8 @@ emit_env_exports() {
             local default_opus="${OPUS_MODEL:-claude-opus-4-5-20251101}"
             local default_haiku="${HAIKU_MODEL:-claude-haiku-4-5-20251001}"
             echo "export ANTHROPIC_MODEL='${claude_model}'"
-            if is_effectively_set "$CLAUDE_API_KEY"; then
-                echo "export ANTHROPIC_AUTH_TOKEN=\"\${CLAUDE_API_KEY}\""
+            if is_effectively_set "${CLAUDE_API_KEY:-}"; then
+                echo "export ANTHROPIC_AUTH_TOKEN=\"\${CLAUDE_API_KEY:-}\""
             fi
             emit_default_models "$default_sonnet" "$default_opus" "$default_haiku"
             emit_subagent_model "$claude_model"
@@ -1782,6 +1918,9 @@ main() {
         "seed"|"doubao")
             emit_env_exports seed "${2:-}"
             ;;
+        "step")
+            emit_env_exports step
+            ;;
         "glm"|"glm4"|"glm4.6"|"glm4.7")
             emit_env_exports glm "${2:-}"
             ;;
@@ -1790,6 +1929,29 @@ main() {
             ;;
         "open")
             emit_env_exports open "${2:-}"
+            ;;
+        "patch-stepfun")
+            shift
+            apply_stepfun_patch "$@"
+            ;;
+        "teams")
+            shift
+            local action="${1:-on}"
+            case "$action" in
+                "on"|"1"|"true")
+                    echo "export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
+                    echo -e "${GREEN}✅ $(t 'enabled'): Agent Teams (Experimental)${NC}" >&2
+                    ;;
+                "off"|"0"|"false")
+                    echo "unset CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"
+                    echo -e "${YELLOW}💡 $(t 'disabled'): Agent Teams${NC}" >&2
+                    ;;
+                *)
+                    echo -e "${RED}❌ $(t 'unknown_option'): teams $action${NC}" >&2
+                    echo -e "${YELLOW}💡 Usage: $(basename "$0") teams [on|off]${NC}" >&2
+                    return 1
+                    ;;
+            esac
             ;;
         "env")
             shift

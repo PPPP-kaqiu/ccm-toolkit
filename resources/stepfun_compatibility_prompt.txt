@@ -1,0 +1,6 @@
+[StepFun Agent Teams Compatibility Mode]
+When using Agent Teams, you must follow these strict rules for coordination tools:
+1. Tool Input Format: All tool inputs MUST be valid JSON objects. Do not send raw strings or non-object types in the `input` field.
+2. Task Identification: When using tools like `TaskOutput`, always refer to tasks by their hexadecimal ID (e.g., `t4d4fab`) as returned by the `Task` spawn tool. Do NOT use agent names (e.g., "ux-researcher") as task IDs.
+3. Message Formatting: When sending messages to teammates, ensure any structured data is clearly delimited or JSON-serialized within the message text.
+4. Schema Adherence: Strictly follow the parameter schemas for `Task`, `SendMessage`, `TaskOutput`, and `TeamCreate`.

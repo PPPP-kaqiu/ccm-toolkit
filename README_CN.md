@@ -27,11 +27,13 @@ ccc glm global
 ## 安装
 
 ### 快速安装（推荐）
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/foreveryh/claude-code-switch/main/quick-install.sh | bash
 ```
 
 ### 本地安装
+
 ```bash
 git clone https://github.com/foreveryh/claude-code-switch.git
 cd claude-code-switch
@@ -41,11 +43,13 @@ cd claude-code-switch
 默认会注入 `ccm()` / `ccc()` 到你的 shell rc 文件，这样可以直接运行 `ccm <provider>`。
 
 如果**不想注入 rc**：
+
 ```bash
 ./install.sh --no-rc
 ```
 
 ### 卸载
+
 ```bash
 ./uninstall.sh
 ```
@@ -53,18 +57,22 @@ cd claude-code-switch
 ## 使用方式
 
 ### 在当前 shell 中切换
+
 如果已注入 rc：
+
 ```bash
 ccm deepseek
 ccm kimi china
 ```
 
 如果直接运行仓库脚本：
+
 ```bash
 eval "$(./ccm deepseek)"
 ```
 
 ### 一键启动 Claude Code
+
 ```bash
 ccc kimi           # 切换模型后启动
 ccc qwen global
@@ -72,6 +80,7 @@ ccc open kimi      # OpenRouter
 ```
 
 ### Provider（直连）
+
 以下 provider 均需要你自己的 API Key，**Claude 官方**可直接使用 Claude Code 订阅（或配置 `CLAUDE_API_KEY`）。
 
 - **DeepSeek**
@@ -117,12 +126,19 @@ ccc open kimi      # OpenRouter
     - `ccm seed deepseek` → `deepseek-v3.2`
     - `ccm seed kimi` → `kimi-k2.5`
 
+- **StepFun (阶跃星辰)**
+  - 命令：`ccm step`
+  - Base URL：`https://api.stepfun.com/` (Anthropic 兼容接口)
+  - 模型：`step-3.5-flash`（默认）
+  - 特点：显式根域名配置，解决路径拼接导致的 404/Invalid Model 问题。
+
 - **Claude 官方**
   - 命令：`ccm claude`
   - Base URL：`https://api.anthropic.com/`
   - 默认使用 Claude Code 订阅（或配置 `CLAUDE_API_KEY`）
 
 ### OpenRouter（显式命令，不做兜底）
+
 OpenRouter 不是兜底方案，只会在你调用 `ccm open ...` 时生效。
 
 ```bash
@@ -131,6 +147,7 @@ ccm open kimi
 ```
 
 支持的 provider：
+
 - `claude`（默认）
 - `deepseek`
 - `kimi`
@@ -139,24 +156,50 @@ ccm open kimi
 - `minimax`
 
 OpenRouter 默认行为：
+
 - Base URL：`https://openrouter.ai/api`
 - 使用 `OPENROUTER_API_KEY`
 - 会设置 `ANTHROPIC_API_KEY=""` 避免冲突
 
-### 项目级覆盖（Quotio 友好）
+## 实验性功能
+
+### Agent Teams (多智能体协作)
+
+要在 Claude Code 中开启多智能体协作实验功能：
+
+1. **开启**:
+   ```bash
+   eval "$(ccm teams on)"
+   ```
+2. **启动**:
+   ```bash
+   ccc <model>
+   ```
+3. **关闭**:
+   ```bash
+   eval "$(ccm teams off)"
+   ```
+
+> [!NOTE]
+> 此功能目前为实验性质，主要针对官方 Claude 模型优化。第三方提供商的兼容性可能存在差异。
+
+## 项目级覆盖（Quotio 友好）
+
 ```bash
 ccm project glm [global|china]
 ccm project reset
 ```
+
 会在当前项目写入/移除 `.claude/settings.local.json`，只影响该项目。
 
-### 状态 & 配置
-```bash
-ccm status
-ccm config
-```
+### 其他工具
+
+- `ccm teams [on|off]` - 开启/关闭实验性的 Agent Teams (多智能体协作)
+- `ccm status` - 显示当前环境状态
+- `ccm config` - 编辑配置文件
 
 ### Claude Pro 多账号管理
+
 ```bash
 ccm save-account work
 ccm switch-account work
@@ -168,15 +211,18 @@ ccm current-account
 ## 配置
 
 优先级：
-1) 环境变量
-2) `~/.ccm_config`
+
+1. 环境变量
+2. `~/.ccm_config`
 
 编辑配置：
+
 ```bash
 ccm config
 ```
 
 示例 `~/.ccm_config`：
+
 ```bash
 # API keys
 DEEPSEEK_API_KEY=sk-...
@@ -184,6 +230,7 @@ KIMI_API_KEY=...
 GLM_API_KEY=...
 QWEN_API_KEY=...
 MINIMAX_API_KEY=...
+STEP_API_KEY=...
 ARK_API_KEY=...
 OPENROUTER_API_KEY=...
 
@@ -195,6 +242,7 @@ QWEN_MODEL=qwen3-max-2026-01-23
 GLM_MODEL=glm-4.7
 MINIMAX_MODEL=MiniMax-M2.1
 SEED_MODEL=ark-code-latest
+STEP_MODEL=step-3.5-flash
 CLAUDE_MODEL=claude-sonnet-4-5-20250929
 # 这些用于设置 Claude Code 默认模型（ANTHROPIC_DEFAULT_*）：
 OPUS_MODEL=claude-opus-4-5-20251101
@@ -207,3 +255,14 @@ HAIKU_MODEL=claude-haiku-4-5-20251001
 - CCM 每个 provider 仅导出这 7 个变量：`ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_MODEL`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`CLAUDE_CODE_SUBAGENT_MODEL`。OpenRouter 仍遵循自身要求。
 - `ccm open` 会提示支持的 provider 与正确用法。
 - `ccm project glm` 只影响当前项目（`.claude/settings.local.json`）。
+
+```
+cd Desktop/code/agent-teams/
+source ~/.zshrc
+eval "$(ccm teams on)"
+ccc step
+```
+
+```
+I'm designing an aircraft shooter game.Create an agent team to explore this.
+```

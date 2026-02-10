@@ -7,6 +7,7 @@
 ## 问题 1：404 错误
 
 ### 症状
+
 ```
 > 你是？
   ⎿  API Error: 404 404 page not found
@@ -25,19 +26,23 @@
 #### 方法 1：清除 Claude Code 的登录状态（推荐）
 
 1. **在 Claude Code 中执行 logout**：
+
    ```
    /logout
    ```
+
    或在终端中：
+
    ```bash
    claude /logout
    ```
 
 2. **使用 ccc 命令重新启动**：
+
    ```bash
    # 重新加载 shell 配置
    source ~/.zshrc
-   
+
    # 使用 ccc 启动（会自动设置环境变量）
    ccc deepseek
    ```
@@ -103,6 +108,7 @@ ccm status  # 显示的是旧配置，没有新添加的模型
 **重要**：`ccm` shell 函数使用的是**已安装的脚本**（位于 `~/.local/share/ccm/ccm.sh`），而不是您工作目录中修改的开发版本。
 
 当您：
+
 1. ✏️ 修改了 `ccm.sh` 文件
 2. ❌ 但忘记重新安装
 3. 🔍 运行 `ccm` 命令
@@ -147,7 +153,7 @@ ls -lh ccm.sh
 # 开发循环
 1. vim ccm.sh              # 编辑代码
 2. ./install.sh            # 安装更新
-3. source ~/.zshrc         # 重载配置  
+3. source ~/.zshrc         # 重载配置
 4. ccm <test-command>      # 测试功能
 5. 如有问题，回到步骤 1
 ```
@@ -155,6 +161,7 @@ ls -lh ccm.sh
 ### 特别提醒
 
 ⚠️ **常见错误模式**：
+
 - ❌ 修改代码 → 直接运行 `ccm` → 疑惑为什么没生效
 - ✅ 修改代码 → `./install.sh` → `source ~/.zshrc` → 运行 `ccm`
 
@@ -204,6 +211,7 @@ claude
 ```
 
 **解决**：
+
 ```bash
 # 在 Claude Code 中执行
 /logout
@@ -218,10 +226,12 @@ ccc deepseek
 ### ❌ Model not found 错误
 
 **可能原因**：
+
 - 模型名称拼写错误
 - API Key 无效
 
 **解决**：
+
 ```bash
 # 查看支持的模型
 ccm help
@@ -231,6 +241,43 @@ ccm status
 
 # 确保 API Key 正确
 ccm config
+```
+
+---
+
+## 问题 4：StepFun + Agent Teams 报错 (Tool use input error)
+
+### 症状
+
+在开启 `Agent Teams` 模式下使用 StepFun (`step-3.5-flash`) 时，频繁出现：
+
+```
+⎿  API Error: Tool use input must be a string or object
+```
+
+### 原因分析
+
+StepFun 的 Anthropic 兼容接口在处理复杂的“多智能体协作”时，有时会将工具调用的输入（input）解析为错误的类型。这在处理高复杂度的任务（如“编写游戏”）时尤为明显。
+
+### 解决方案
+
+#### 方法 1：结构化提示词 (Structured Prompting)
+
+在给 Lead 智能体下达指令时，建议先要求其制定计划，然后再分发任务：
+
+> “我要写一个飞机大战游戏。**请先制定一个详细的设计计划**，然后启动 Agent Team，让 A 负责架构，B 负责逻辑实现。”
+
+#### 方法 2：遵循本地指南
+
+确保项目中存在 `CLAUDE.md`。本项目已内置了 StepFun 专用指令，Claude Code 启动时会自动读取并强制模型使用更严谨的 JSON 格式。
+
+#### 方法 3：关闭 Teams 模式（最稳定）
+
+如果任务非常复杂且持续报错，建议回到单智能体模式：
+
+```bash
+eval "$(ccm teams off)"
+ccc step
 ```
 
 ---
@@ -274,6 +321,7 @@ $ ccc deepseek
 ```
 
 **关键点**：
+
 - ✅ 没有认证冲突警告
 - ✅ Base URL 显示正确
 - ✅ 可以直接开始对话
@@ -296,22 +344,26 @@ ccc deepseek
 如果以上方法都无法解决，请提供以下信息：
 
 1. **系统信息**：
+
    ```bash
    uname -a
    echo $SHELL
    ```
 
 2. **CCM 版本**：
+
    ```bash
    head -5 ccm.sh  # 查看版本注释
    ```
 
 3. **配置状态**：
+
    ```bash
    ccm status
    ```
 
 4. **启动命令和完整输出**：
+
    ```bash
    ccc deepseek 2>&1 | tee debug.log
    ```

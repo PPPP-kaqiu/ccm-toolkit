@@ -269,13 +269,14 @@ ccc() {
     echo ""
     echo "Examples:"
     echo "  ccc deepseek                              # Launch with DeepSeek"
+    echo "  ccc step                                  # Launch with StepFun"
     echo "  ccc open kimi                             # Launch with OpenRouter (kimi)"
     echo "  ccc woohelps                              # Switch to 'woohelps' account and launch"
     echo "  ccc claude:work                           # Switch to 'work' account and use Claude"
     echo "  ccc glm --dangerously-skip-permissions    # Launch GLM with options"
     echo ""
     echo "Available models:"
-    echo "  Official: deepseek, glm, kimi, qwen, seed|doubao, claude, minimax"
+    echo "  Official: deepseek, glm, kimi, qwen, seed|doubao, step, claude, minimax"
     echo "  OpenRouter: open <provider>"
     echo "  Account:  <account> | claude:<account>"
     return 1
@@ -303,7 +304,7 @@ ccc() {
   # Helper: known model keyword
   _is_known_model() {
     case "\$1" in
-      deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open)
+      deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|qwen|minimax|mm|seed|doubao|step|claude|sonnet|s|open)
         return 0 ;;
       *)
         return 1 ;;
@@ -480,8 +481,8 @@ fi
 exec "$CCM_SH" "$@"
 EOF
   else
-    local content
-    content="$(cat <<'EOF'
+    # Use 'EOF' to prevent shell expansion
+    cat > "$target" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 CCM_SH="__DATA_DIR__/ccm.sh"
@@ -491,9 +492,9 @@ if [[ ! -f "$CCM_SH" ]]; then
 fi
 exec "$CCM_SH" "$@"
 EOF
-)"
-    content="${content//__DATA_DIR__/$data_dir}"
-    printf '%s\n' "$content" > "$target"
+    # Replace placeholder with literal data_dir
+    sed -i.bak "s|__DATA_DIR__|$data_dir|g" "$target"
+    rm -f "$target.bak"
   fi
 
   run_cmd "$bin_dir" chmod +x "$target"
@@ -523,13 +524,14 @@ Usage: ccc <model> [region|variant] [claude-options]
 
 Examples:
   ccc deepseek                     # Launch Claude Code with DeepSeek
+  ccc step                         # Launch with StepFun
   ccc open kimi                    # Launch with OpenRouter (kimi)
   ccc kimi --dangerously-skip-permissions  # Pass options to Claude Code
   ccc woohelps                     # Switch to 'woohelps' account and launch
   ccc claude:work                  # Switch to 'work' account and use Claude
 
 Available models:
-  Official: deepseek, glm, kimi, qwen, seed|doubao, claude, minimax
+  Official: deepseek, glm, kimi, qwen, seed|doubao, step, claude, minimax
   OpenRouter: open <provider>
   Account:  <account> | claude:<account>
 EOF2
@@ -566,7 +568,7 @@ fi
 
 is_known_model() {
     case "$1" in
-        deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open)
+        deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|qwen|minimax|mm|seed|doubao|step|claude|sonnet|s|open)
             return 0 ;;
         *)
             return 1 ;;
@@ -629,8 +631,8 @@ else
 fi
 EOF
   else
-    local content
-    content="$(cat <<'EOF'
+    # Use 'EOF' to prevent shell expansion
+    cat > "$target" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 CCM="__DATA_DIR__/ccm.sh"
@@ -644,13 +646,14 @@ Usage: ccc <model> [region|variant] [claude-options]
 
 Examples:
   ccc deepseek                     # Launch Claude Code with DeepSeek
+  ccc step                         # Launch with StepFun
   ccc open kimi                    # Launch with OpenRouter (kimi)
   ccc kimi --dangerously-skip-permissions  # Pass options to Claude Code
   ccc woohelps                     # Switch to 'woohelps' account and launch
   ccc claude:work                  # Switch to 'work' account and use Claude
 
 Available models:
-  Official: deepseek, glm, kimi, qwen, seed|doubao, claude, minimax
+  Official: deepseek, glm, kimi, qwen, seed|doubao, step, claude, minimax
   OpenRouter: open <provider>
   Account:  <account> | claude:<account>
 EOF2
@@ -687,7 +690,7 @@ fi
 
 is_known_model() {
     case "$1" in
-        deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|qwen|minimax|mm|seed|doubao|claude|sonnet|s|open)
+        deepseek|ds|glm|glm4|glm4.6|glm4.7|kimi|kimi2|qwen|minimax|mm|seed|doubao|step|claude|sonnet|s|open)
             return 0 ;;
         *)
             return 1 ;;
@@ -749,9 +752,9 @@ else
     exec claude "${claude_args[@]}"
 fi
 EOF
-)"
-    content="${content//__DATA_DIR__/$data_dir}"
-    printf '%s\n' "$content" > "$target"
+    # Replace placeholder with literal data_dir
+    sed -i.bak "s|__DATA_DIR__|$data_dir|g" "$target"
+    rm -f "$target.bak"
   fi
 
   run_cmd "$bin_dir" chmod +x "$target"

@@ -27,13 +27,16 @@ Claude-Code-Switch/
 ## Key Architecture & Design Patterns
 
 ### 1) Two usage modes
+
 - **Direct execution:** `./ccm ...` / `./ccc ...` (no install)
 - **Installed functions:** `ccm ...` / `ccc ...` (after `./install.sh`)
   - Installer copies `ccm.sh` + `lang/` into `${XDG_DATA_HOME:-$HOME/.local/share}/ccm`
   - Optional rc injection for `ccm()` / `ccc()` functions
 
 ### 2) Configuration hierarchy
+
 Priority order:
+
 1. Environment variables
 2. `~/.ccm_config` (created on first run)
 3. Built-in defaults
@@ -41,7 +44,9 @@ Priority order:
 Key function: `is_effectively_set()` treats placeholder values as unset.
 
 ### 3) Environment export pattern
+
 `emit_env_exports()` prints export statements which are `eval`'d by the caller:
+
 ```bash
 export ANTHROPIC_BASE_URL=...
 export ANTHROPIC_AUTH_TOKEN=...
@@ -53,7 +58,9 @@ export CLAUDE_CODE_SUBAGENT_MODEL=...
 ```
 
 ### 4) Region-aware providers
+
 Kimi / GLM / Qwen / MiniMax accept `global|china`:
+
 - `ccm kimi [global|china]`
 - `ccm glm [global|china]`
 - `ccm qwen [global|china]`
@@ -62,38 +69,46 @@ Kimi / GLM / Qwen / MiniMax accept `global|china`:
 Normalization handled by `normalize_region()`.
 
 ### 5) OpenRouter (explicit)
+
 OpenRouter is not a fallback. Use:
+
 - `ccm open <provider>`
 
 `emit_openrouter_exports()` sets:
+
 - Base URL: `https://openrouter.ai/api`
 - `ANTHROPIC_AUTH_TOKEN=$OPENROUTER_API_KEY`
 - `ANTHROPIC_API_KEY=""` (avoid conflicts)
 
 ### 6) Project-only override (Quotio-friendly)
+
 `ccm project glm [global|china]` writes `.claude/settings.local.json` so GLM applies only to the current project.
 
 ## Common Commands & Workflows
 
 ### Installation
+
 ```bash
 ./install.sh
 source ~/.zshrc
 ```
 
 ### Switch in current shell
+
 ```bash
 ccm deepseek
 ccm kimi china
 ```
 
 ### Launch Claude Code
+
 ```bash
 ccc glm global
 ccc open kimi
 ```
 
 ### Seed (ARK)
+
 ```bash
 ccm seed              # ark-code-latest
 ccm seed kimi         # kimi-k2.5
@@ -101,6 +116,7 @@ ccm seed deepseek     # deepseek-v3.2
 ```
 
 ### Account management (Claude Pro)
+
 ```bash
 ccm save-account work
 ccm switch-account work
@@ -112,6 +128,7 @@ ccm current-account
 ## Code Organization in ccm.sh
 
 Key functions:
+
 - `load_translations()` / `load_config()` / `is_effectively_set()`
 - `emit_env_exports()` (provider switching)
 - `emit_openrouter_exports()` (OpenRouter)
@@ -132,3 +149,11 @@ Key functions:
 - Token masking in `ccm status`
 - Recommend `chmod 600 ~/.ccm_config`
 - Environment vars override config file (good for CI)
+
+## StepFun Tool Use & Agent Teams Guidelines
+
+When using StepFun models (e.g., `step-3.5-flash`) with Agent Teams enabled:
+
+1.  **Strict JSON Tool Inputs**: Always ensure that tool `input` arguments are structured JSON objects as defined in the tool's schema. Avoid passing strings if an object is expected.
+2.  **Explicit Coordination**: When the Lead agent interacts with Teammates, use clear and structured messages. If a tool call fails, simplify the request or ask for a step-by-step plan before execution.
+3.  **Ambiguity Handling**: If a teammate's response is unclear or causes a parsing error, the Lead should ask for a re-formatted response emphasizing structured JSON.
